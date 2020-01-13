@@ -13,6 +13,7 @@ This module defines the following functions:
 ------------------------------------------------------------------------
 '''
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def isPrime(n):
@@ -190,3 +191,33 @@ def equidistr_seq(N, d, seq_type):
         eq_seq[n_val - 1, :] = equidistr_nth(n_val, d, seq_type)
 
     return eq_seq
+
+
+def scatter2d(N):
+    '''
+    --------------------------------------------------------------------
+    Create 4-pane figure of scatter plots for all four equidistributed
+    sequence types, each plot with a fixed number of points N
+    --------------------------------------------------------------------
+    '''
+    data_w = equidistr_seq(N, 2, 'weyl')
+    data_h = equidistr_seq(N, 2, 'haber')
+    data_n = equidistr_seq(N, 2, 'niederreiter')
+    data_b = equidistr_seq(N, 2, 'baker')
+    x1_w = data_w[:, 0]
+    x2_w = data_w[:, 1]
+    x1_h = data_h[:, 0]
+    x2_h = data_h[:, 1]
+    x1_n = data_n[:, 0]
+    x2_n = data_n[:, 1]
+    x1_b = data_b[:, 0]
+    x2_b = data_b[:, 1]
+    fig, axs = plt.subplots(2, 2)
+    axs[0, 0].scatter(x1_w, x2_w, s=1.0, c='blue', label='Weyl')
+    axs[0, 0].set_title('Weyl')
+    axs[0, 1].scatter(x1_h, x2_h, s=1.0, c='blue', label='Haber')
+    axs[0, 1].set_title('Haber')
+    axs[1, 0].scatter(x1_n, x2_n, s=1.0, c='blue', label='Niederreiter')
+    axs[1, 0].set_title('Niederreiter')
+    axs[1, 1].scatter(x1_b, x2_b, s=1.0, c='blue', label='Baker')
+    axs[1, 1].set_title('Baker')
