@@ -1,0 +1,305 @@
+\documentclass[letterpaper,12pt]{article}
+
+\usepackage{threeparttable}
+\usepackage{geometry}
+\geometry{letterpaper,tmargin=1in,bmargin=1in,lmargin=1.25in,rmargin=1.25in}
+\usepackage[format=hang,font=normalsize,labelfont=bf]{caption}
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{delarray}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{lscape}
+\usepackage{natbib}
+\usepackage{setspace}
+\usepackage{float,color}
+\usepackage[pdftex]{graphicx}
+\usepackage{listings}
+\lstset{basicstyle=\footnotesize\ttfamily, language=Python, showstringspaces=false}
+\usepackage{pdfsync}
+\usepackage{verbatim}
+\usepackage{placeins}
+\usepackage{geometry}
+\usepackage{pdflscape}
+\synctex=1
+\usepackage{hyperref}
+\hypersetup{colorlinks,linkcolor=red,urlcolor=blue,citecolor=red}
+\usepackage{bm}
+
+
+\theoremstyle{definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{acknowledgement}[theorem]{Acknowledgement}
+\newtheorem{algorithm}[theorem]{Algorithm}
+\newtheorem{axiom}[theorem]{Axiom}
+\newtheorem{case}[theorem]{Case}
+\newtheorem{claim}[theorem]{Claim}
+\newtheorem{conclusion}[theorem]{Conclusion}
+\newtheorem{condition}[theorem]{Condition}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{criterion}[theorem]{Criterion}
+\newtheorem{definition}{Definition} % Number definitions on their own
+\newtheorem{derivation}{Derivation} % Number derivations on their own
+\newtheorem{example}[theorem]{Example}
+\newtheorem{exercise}[theorem]{Exercise}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{notation}[theorem]{Notation}
+\newtheorem{problem}[theorem]{Problem}
+\newtheorem{proposition}{Proposition} % Number propositions on their own
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{solution}[theorem]{Solution}
+\newtheorem{summary}[theorem]{Summary}
+\bibliographystyle{aer}
+\newcommand\ve{\varepsilon}
+%\renewcommand\theenumi{\roman{enumi}}
+\newcommand\norm[1]{\left\lVert#1\right\rVert}
+\newcommand\abs[1]{\left\lvert#1\right\rvert}
+
+\begin{document}
+
+\title{GMM and SMM notes and comments for Tyler Ransom}
+\author{Richard W. Evans}
+\maketitle
+
+\pagenumbering{arabic}
+
+
+\section{GMM}\label{SecGMM}
+
+  \setcounter{subsection}{-1}
+
+  \subsection{GMM General Specification}\label{SecGMMgen}
+
+    My most general definition of GMM is the following. Let $\bm{x}$ be an $N\times M$ matrix of data with $N$ observations (rows) and $M$ variables (columns) and typical element $x_{n,m}$. Let $\bm{\theta}\in\mathbb{R}^K$ be the $K$-dimensional parameter vector to be estimated, and let $\bm{\hat{\theta}}_{GMM}$ be the GMM estimator of that parameter vector. The GMM estimator is the one that minimizes some general norm (distance measure) on an $R$-dimensional vector of model moments $\bm{m}\bigl(\bm{x}|\bm{\theta}\bigr)$ and a corresponding $R$-dimensional vector of data moments $\bm{m}\bigl(\bm{x}\bigr)$ such that $R\geq K$.
+    \begin{equation}\label{EqGMMdefgen}
+      \bm{\hat{\theta}}_{GMM}:\quad \min_{\bm{\theta}}\norm{\bm{m}\bigl(\bm{x}|\bm{\theta}\bigr) - \bm{m}\bigl(\bm{x}\bigr)}
+    \end{equation}
+
+    The most common GMM criterion function or choice of norm is a weighted sum of squared moment errors. We can first define an $R\times 1$ error vector $\bm{e}\bigl(\bm{x},\bm{\theta}\bigr)$ as the following function of the data $\bm{x}$ and the parameter vector $\bm{\theta}$ which can either be given in levels or in percentage differences (there are advantages to each).
+    \begin{equation}\label{EqGMMerrvec}
+      \bm{e}\bigl(\bm{x},\bm{\theta}\bigr)\equiv
+        \begin{cases}
+          \bm{m}\bigl(\bm{x}|\bm{\theta}\bigr) - \bm{m}\bigl(\bm{x}\bigr) \\
+          \quad\text{or} \\
+          \frac{\bm{m}\bigl(\bm{x}|\bm{\theta}\bigr) - \bm{m}\bigl(\bm{x}\bigr)}{\bm{m}\bigl(\bm{x}\bigr)}
+        \end{cases}
+    \end{equation}
+
+    The most common weighted sum of squared moment errors GMM specification takes the following form,
+    \begin{equation}\label{EqGMMdef}
+      \bm{\hat{\theta}}_{GMM}:\quad \min_{\bm{\theta}}\:\bm{e}\bigl(\bm{x},\bm{\theta}\bigr)^T\:\bm{W}\:\bm{e}\bigl(\bm{x},\bm{\theta}\bigr)
+    \end{equation}
+    where $\bm{W}$ is an $R\times R$ weighting matrix. The standard arguments regarding asymptotic biasedness and efficiency apply to the weighting matrix. An optimal weighting matrix is most efficient (inverse variance estimators, take care of heteroscedasticity and autocorrelation), but identity matrix is unbiased.
+
+
+  \subsection{GMM Linear Regression: Method 1}\label{SecGMM1}
+
+    Define a specific linear regression model as the following equation with the following assumptions on the error terms,
+    \begin{equation}\label{EqLinRegGen}
+      \begin{split}
+        y_i = &\beta_0 + \beta_1 x_{1,i} + \beta_2 x_{2,i} + ... \beta_K x_{K,i} + \ve_i \\
+        &\text{where}\quad \ve_i\sim f(\ve), \quad E[\ve_i]=0,\quad\text{and}\quad E[x_{k,i}\ve_i]=0 \quad\forall k
+      \end{split}
+    \end{equation}
+    where the data are the matrix of $i=1,2,...N$ observations on $K + 1$ variables $\bigl(y_i,x_{1,i},x_{2,i},...x_{K,i}\bigr)$, the parameter vector to be estimated is the $K+1$ vector $\bm{\beta}=(\beta_0,\beta_1,\beta_2,...\beta_K)$, and the error terms $\ve_i$ are i.i.d. according to the general pdf $f(\ve)$ with the moment conditions $E[\ve_i]=0$ and $E[x_{k,i}\ve_i]=0$ for all $k$.
+
+    The most standard way of teaching GMM using linear regression is to use the $K+1$ moments implied by the unconditional expected value condition $E[\ve_i]=0$ and the $K$ conditional expected value conditions $E[x_{k,i}\ve_i]=0$ for all $k$. To map this into the notation in Section \ref{SecGMMgen}, let the vector of data moments be the vector of $K+1$ zeros assumed by the $K+1$ zero-expected values on $\ve_i$.
+    \begin{equation}\label{EqLinRegDataMoms1}
+      \bm{m}\bigl(\bm{y},\bm{x}\bigr) =
+        \begin{bmatrix}
+          E[\ve_i] \\ E[x_{1,i}\ve_i] \\ E[x_{2,i}\ve_i] \\ \vdots \\ E[x_{K,i}\ve_i]
+        \end{bmatrix} =
+        \begin{bmatrix} 0 \\ 0 \\ 0 \\ \vdots \\ 0
+        \end{bmatrix}
+    \end{equation}
+    These $K\times 1$ data moments are zero by assumption and do not actually use the data $\bm{y}$ or $\bm{x}$ in this case.
+
+    The model moments from Section \ref{SecGMMgen} were specified as a function of data and parameters $\bm{m}\bigl(\bm{x}|\bm{\theta}\bigr)$. In this linear regression case, the $K\times 1$ model moments $m_k$ are defined by solving the linear regression model \eqref{EqLinRegGen} for $\ve_i$ and taking the sample averages that correspond to the assumed unconditional and conditional expectations on $\ve_i$.
+    \begin{equation}\label{EqLinRegModelMoms1}
+      \bm{m}\bigl(\bm{y},\bm{x}|\bm{\beta}\bigr) =
+        \begin{bmatrix}
+          \frac{1}{N}\sum_{i=1}^N\bigl(y_i - \beta_0 - \beta_1 x_{1,i} - \beta_2 x_{2,i} - ... \beta_K x_{K,i}\bigr) \\ \frac{1}{N}\sum_{i=1}^N\bigl(y_i - \beta_0 - \beta_1 x_{1,i} - \beta_2 x_{2,i} - ... \beta_K x_{K,i}\bigr)x_{1,i} \\ \frac{1}{N}\sum_{i=1}^N\bigl(y_i - \beta_0 - \beta_1 x_{1,i} - \beta_2 x_{2,i} - ... \beta_K x_{K,i}\bigr)x_{2,i} \\ \vdots \\ \frac{1}{N}\sum_{i=1}^N\bigl(y_i - \beta_0 - \beta_1 x_{1,i} - \beta_2 x_{2,i} - ... \beta_K x_{K,i}\bigr)x_{K,i}
+        \end{bmatrix}
+    \end{equation}
+
+    Define the moment error vector, analogous to \eqref{EqGMMerrvec} above, as the following function of data and parameters.
+    \begin{equation}\label{EqGMMerrvec1}
+      \bm{e}\bigl(\bm{y},\bm{x},\bm{\beta}\bigr)\equiv \bm{m}\bigl(\bm{y},\bm{x}|\bm{\beta}\bigr) - \bm{m}\bigl(\bm{y},\bm{x}\bigr) = \bm{m}\bigl(\bm{y},\bm{x}|\bm{\beta}\bigr)
+    \end{equation}
+    Note that we cannot use the percent deviation form of the moment errors shown in the second specification of \eqref{EqGMMerrvec} because the denominator is zero.
+
+    The GMM estimator in this case $\bm{\hat{\beta}}_{GMM1}$ is the following exactly identified problem of choosing $K+1$ parameters to minimize the weighted sum of squared errors in $K+1$ moment conditions,
+    \begin{equation}\label{EqGMMdef1}
+      \bm{\hat{\beta}}_{GMM1}:\quad \min_{\bm{\beta}}\:\bm{e}\bigl(\bm{y},\bm{x},\bm{\beta}\bigr)^T\:\bm{W}\:\bm{e}\bigl(\bm{y},\bm{x},\bm{\beta}\bigr)
+    \end{equation}
+    where $\bm{W}$ is a $\bigl(K+1\times K+1\bigr)$ weighting matrix.
+
+
+  \subsection{GMM Linear Regression: Method 2}\label{SecGMM2}
+
+    The second method for estimating the parameter vector $\bm{\beta}$ by GMM is just weighted linear least squares. For nonlinear model cases, this is just weighted nonlinear least squares. This ends up being an overidentified GMM estimation in which each error term is treated as a model moment. This approach does not really use any of the expected value of $\ve_i$ conditions in \eqref{EqLinRegGen}. It just uses the idea that we want to choose the parameter vector $\bm{\beta}$ to maximize the fit of the predicted values of the endogenous variable $\hat{y}_i$ to the data values of the endogenous variable $y_i$. This is equivalent to minimizing the absolute value of the error terms $\ve_i$.
+
+    Similar to Method 1 in Section \ref{SecGMM1}, we assume the data moments are a vector of zeros. However, in this case, the data moment vector is length $N$, a zero for each observation of $\ve_i$.
+    \begin{equation}\label{EqLinRegDataMoms2}
+      \bm{m}\bigl(\bm{y},\bm{x}\bigr) =
+        \begin{bmatrix}
+          \min\abs{\ve_1} \\ \min\abs{\ve_2} \\ \vdots \\ \min\abs{\ve_N}
+        \end{bmatrix} =
+        \begin{bmatrix} 0 \\ 0 \\ \vdots \\ 0
+        \end{bmatrix}
+    \end{equation}
+    Similar to \eqref{EqLinRegDataMoms1}, these $N\times 1$ data moments are zero by assumption and do not actually use the data $\bm{y}$ or $\bm{x}$ in this case.
+
+    The model moments are simply the model error terms found by solving linear regression equation \eqref{EqLinRegGen} for $\ve_i$ for each of the $i=1,2,...N$ observations. Note that each model error term is a function of data $\bm{y}$ and $\bm{x}$ and paramters $\bm{\beta}$.
+    \begin{equation}\label{EqLinRegModelMoms2}
+      \bm{m}\bigl(\bm{y},\bm{x}|\bm{\beta}\bigr) =
+        \begin{bmatrix}
+          y_1 - \beta_0 - \beta_1 x_{1,1} - \beta_2 x_{2,1} - ... \beta_K x_{K,1} \\
+          y_2 - \beta_0 - \beta_1 x_{1,2} - \beta_2 x_{2,2} - ... \beta_K x_{K,2} \\ \vdots \\
+          y_N - \beta_0 - \beta_1 x_{1,N} - \beta_2 x_{2,N} - ... \beta_K x_{K,N}
+        \end{bmatrix}
+    \end{equation}
+
+    Define the $N\times 1$ moment error vector, analogous to \eqref{EqGMMerrvec}, as the following function of data and parameters.
+    \begin{equation}\label{EqGMMerrvec2}
+      \bm{e}\bigl(\bm{y},\bm{x},\bm{\beta}\bigr)\equiv \bm{m}\bigl(\bm{y},\bm{x}|\bm{\beta}\bigr) - \bm{m}\bigl(\bm{y},\bm{x}\bigr) = \bm{m}\bigl(\bm{y},\bm{x}|\bm{\beta}\bigr)
+    \end{equation}
+    As with \eqref{EqGMMerrvec1}, we cannot use the percent deviation form of the moment errors shown in the second specification of \eqref{EqGMMerrvec} because the denominator is zero.
+
+    The GMM estimator in this case $\bm{\hat{\beta}}_{GMM2}$ is the following overidentified problem of choosing $K+1$ parameters to minimize the weighted sum of squared errors in $N$ moment conditions,
+    \begin{equation}\label{EqGMMdef2}
+      \bm{\hat{\beta}}_{GMM2}:\quad \min_{\bm{\beta}}\:\bm{e}\bigl(\bm{y},\bm{x},\bm{\beta}\bigr)^T\:\bm{W}\:\bm{e}\bigl(\bm{y},\bm{x},\bm{\beta}\bigr)
+    \end{equation}
+    where $\bm{W}$ is a $\bigl(N\times N\bigr)$ weighting matrix.
+
+
+  \subsection{GMM Comparison of Methods}\label{SecGMMcomp}
+
+
+
+\section{SMM}\label{SecSMM}
+
+  \setcounter{subsection}{-1}
+
+  \subsection{SMM General Specification}\label{SecSMMgen}
+
+    Simulated method of moments (SMM) is analogous to the generalized method of moments (GMM) estimator. SMM could really be thought of as a particular type of GMM estimator. The SMM estimator chooses model parameters $\bm{\theta}$ to make simulated model moments match data moments. Seminal papers developing SMM are \citet{McFadden:1989}, \citet{LeeIngram:1991}, and \citet{DuffieSingleton:1993}. Good textbook treatments of SMM are found in \citet[pp.87-100]{AddaCooper:2003} and \citet[pp. 383-394]{DavidsonMacKinnon:2004}.
+
+    In the general specification of GMM estimation from Section \ref{SecGMMgen}, we use data $\bm{x}$ and model parameters $\bm{\theta}$ to minimize the distance between model moments $\bm{m}(\bm{x}|\bm{\theta})$ and data moments $\bm{m}(\bm{x})$.
+    \begin{equation}\tag{\ref{EqGMMdefgen}}
+      \bm{\hat{\theta}}_{GMM}:\quad \min_{\bm{\theta}}\norm{\bm{m}\bigl(\bm{x}|\bm{\theta}\bigr) - \bm{m}\bigl(\bm{x}\bigr)}
+    \end{equation}
+    The following difficulties can arise with GMM making it not possible or very difficult.
+    \begin{itemize}
+      \item The model moment function $\bm{m}(\bm{x}|\bm{\theta})$ is not known analytically.
+      \item The data moments you are trying to match come from another model (indirect inference).
+      \item The model moments $\bm{m}(\bm{x}|\bm{\theta})$ are derived from latent variables that are not observed by the modeler. You only have moments, not the underlying data. See \citet{LaroqueSalanie:1993}.
+      \item The model moments $\bm{m}(\bm{x}|\bm{\theta})$ are derived from censored variables that are only partially observed by the modeler.
+      \item The model moments $\bm{m}(\bm{x}|\bm{\theta})$ are just difficult to derive analytically. Examples include moments that include multiple integrals over nonlinear functions as in \citet{McFadden:1989}.
+    \end{itemize}
+
+    Let $\bm{x}$ be the $N\times M$ vector of data as in Section \ref{SecGMMgen}, and let $\bm{\tilde{x}}_s$ be the $s$th simulation of the dataset $\bm{x}$. SMM estimation is simply to simulate the model data $S$ times, and use the average values of the moments from the simulated data as the estimator for the model moments. Let $\bm{\tilde{x}}=\{\bm{\tilde{x}}_1,\bm{\tilde{x}}_2,...\bm{\tilde{x}}_s,...\bm{\tilde{x}}_S\}$ be the $S$ simulations of the model data.
+
+    It is important to note a major difference between SMM and GMM. In the GMM examples in Section \ref{SecGMM}, the parameter vector $\bm{\theta}$ could be estimated without strong distributional assumptions about the random variable error term $\ve_i$. In the first linear regression example in Section \ref{SecGMM1} with the $K+1$ moments, all that was needed was that the errors be distributed i.i.d. according to general pdf $\ve_i\sim f(\ve)$ and the two sets of moment conditions on the distribution of the errors $E[\ve_i]=0$ and $E[\ve_i x_{k,i}]=0$. In SMM, we need to know the exact distribution $f(\ve)$ in order to simulate the data. For example, if we assume the errors are distributed normally, we need to know the parameters of the distribution (variance $\sigma^2$ in the case of the normal distribution). We need to be able
+
+    The $R\times 1$ data moment vector $\bm{m}\bigl(\bm{x}\bigr)$ is the same as in the GMM specification of Section \ref{SecGMMgen}. We can compute a set of $R$ model moments $\bm{m}\bigl(\bm{\tilde{x}}_s|\bm{\theta}\bigr)$ from each of the simulated datasets $\bm{\tilde{x}}_s$. One conceptual advantage of SMM relative to GMM is that the model moments are computed in the same way as the data moments because the model moments are computed from simulated datasets $\bm{\tilde{x}}_s$ that are supposed to be representative of the real world dataset $\bm{x}$. The final model moment vector $\bm{\hat{m}}\bigl(\bm{\tilde{x}}|\bm{\theta}\bigr)$ to be used in SMM is an average across each of the moment vectors for each simulation $\bm{m}\bigl(\bm{\tilde{x}}_s|\bm{\theta}\bigr)$.
+    \begin{equation}\label{EqSMMmodmomgen}
+      \bm{\hat{m}}\bigl(\bm{\tilde{x}}|\bm{\theta}\bigr) \equiv \frac{1}{S}\sum_{s=1}^S\bm{m}\bigl(\bm{\tilde{x}}_s|\bm{\theta}\bigr)
+    \end{equation}
+
+    Once we have an estimate of the model moments $\bm{\hat{m}}\bigl(\bm{\tilde{x}}|\bm{\theta}\bigr)$ from our $S$ simulations, SMM estimation is very similar to our presentation of GMM. The SMM approach of estimating the parameter vector $\bm{\hat{\theta}}_{SMM}$ is to choose $\bm{\theta}$ to minimize some distance measure of the simulated model moments $\bm{\hat{m}}\bigl(\bm{\tilde{x}}|\bm{\theta}\bigr)$ from the data moments $\bm{m}\bigl(\bm{x}\bigr)$.
+    \begin{equation}\label{EqSMMdefgen}
+      \bm{\hat{\theta}}_{SMM}:\quad \min_{\bm{\theta}}\norm{\bm{\hat{m}}\bigl(\bm{\tilde{x}}|\bm{\theta}\bigr) - \bm{m}\bigl(\bm{x}\bigr)}
+    \end{equation}
+
+    The distance measure $||\bm{\hat{m}}(\bm{\tilde{x}}|\bm{\theta})-\bm{m}(\bm{x})||$ can be any kind of norm. But it is important to recognize that your estimates $\bm{\hat{\theta}}_{SMM}$ will be dependent on what distance measure (norm) you choose. The most widely studied and used distance metric in GMM and SMM estimation is the $L^2$ norm or the weighted sum of squared errors in moments. Define the moment error function $\bm{e}(\bm{\tilde{x}},\bm{x}|\bm{\theta})$ as the simple difference or percent difference in the vector of simulated model moments from the data moments.
+    \begin{equation}\label{EqSMMerrvec}
+      \bm{e}\bigl(\bm{\tilde{x}},\bm{x},\bm{\theta}\bigr)\equiv
+        \begin{cases}
+          \bm{\hat{m}}\bigl(\bm{\tilde{x}}|\bm{\theta}\bigr) - \bm{m}\bigl(\bm{x}\bigr) \\
+          \quad\text{or} \\
+          \frac{\bm{\hat{m}}\bigl(\bm{\tilde{x}}|\bm{\theta}\bigr) - \bm{m}\bigl(\bm{x}\bigr)}{\bm{m}\bigl(\bm{x}\bigr)}
+        \end{cases}
+    \end{equation}
+    The weighted sum of squared simulated moment errors SMM specification takes the following form,
+    \begin{equation}\label{EqSMMdef}
+      \bm{\hat{\theta}}_{SMM}:\quad \min_{\bm{\theta}}\:\bm{e}\bigl(\bm{\tilde{x}},\bm{x},\bm{\theta}\bigr)^T\:\bm{W}\:\bm{e}\bigl(\bm{\tilde{x}},\bm{x},\bm{\theta}\bigr)
+    \end{equation}
+    where $W$ is a $R\times R$ weighting matrix in the criterion function. We call the quadratic form expression $e(\tilde{x},x|\theta)^T \, W \, e(\tilde{x},x|\theta)$ the criterion function because it is a strictly positive scalar that is the object of the minimization in the SMM problem statement. The $R\times R$ weighting matrix $W$ in the criterion function allows the econometrician to control how each moment is weighted in the minimization problem. For example, an $R\times R$ identity matrix for $W$ would give each moment equal weighting, and the criterion function would be a simply sum of squared percent deviations (errors). Other weighting strategies can be dictated by the nature of the problem or model.
+
+    One last item to emphasize with SMM is that the errors that are drawn for the $S$ simulations of the model must be drawn only once so that the minimization problem for $\bm{\hat{\theta}}_{SMM}$ does not have the underlying sampling changing for each guess of a value of $\bm{\theta}$. Put more simply, you want the random draws for all the simulations to be held constant so that the only thing changing in the minimization problem is the value of the vector of parameters $\bm{\theta}$.
+
+
+  \subsection{SMM Linear Regression: Method 1}\label{SecSMM1}
+
+    The SMM approach analogous to the GMM approach in Section \ref{SecGMM1} does not work. In most cases, the parameters are not identified. Loss of identification comes first because we have a maximum of $K+1$ moments with potentially $K+2$ parameters to estimate. A second characteristic that takes away a degree of freedom in this case is that one of the moment conditions $E[\ve_i]=0$ might be true for many parameter values in the assumed random variable distribution
+
+    In SMM, we need to modify the regression equation \eqref{EqLinRegGen} to include a specific parameterized pdf for the i.i.d. random shocks $\ve_i$. We assume here a normal distribution, which could add another parameter $\sigma$ to our vector of parameters to be estimated $\bm{\theta}$.
+    \begin{equation}\label{EqLinRegGen2}
+      \begin{split}
+        y_i = &\beta_0 + \beta_1 x_{1,i} + \beta_2 x_{2,i} + ... \beta_K x_{K,i} + \ve_i \\
+        &\text{where}\quad \ve_i\sim N(0,\sigma^2), \quad E[\ve_i]=0,\quad\text{and}\quad E[x_{k,i}\ve_i]=0 \quad\forall k
+      \end{split}
+    \end{equation}
+    The $K+1$ model moment conditions are either not functions of the parameters
+
+
+  \subsection{SMM Linear Regression: Method 2}\label{SecSMM2}
+
+    Only the SMM method analogous to the second GMM method in Section \ref{SecGMM2} will work. The data $\bm{y}$ and $\bm{x}$ in linear regression model \eqref{EqLinRegGen2} has $N$ observations on one dependent variable $y_i$ and $K$ independent variables $x_{k,i}$. The parameter vector to be estimated is now $\bm{\theta}=\bigl(\beta_0,\beta_1,...\beta_K, \sigma\bigr)$, which has length $K+2$ and includes the standard deviation $\sigma$ of the mean-zero, normally distributed random shocks $\ve_i$.
+
+    In this case, let the vector of data moments be the vector of $N$ dependent variable values $y_i$.
+    \begin{equation}\label{EqLinRegSMMDataMoms2}
+      \bm{m}\bigl(\bm{y},\bm{x}\bigr) = \bm{m}\bigl(\bm{y}\bigr) =
+        \begin{bmatrix}
+          y_1 \\ y_2 \\ \vdots \\ y_N
+        \end{bmatrix} = \bm{y}
+    \end{equation}
+    Then let the data moments for the $s$th simulation be the vector of predicted values including the simulated error terms $\ve_{s,i}$,
+    \begin{equation}\label{EqSMMlinregsimmodmoms2}
+      \bm{m}\bigl(\bm{\tilde{y}}_s,\bm{\tilde{x}}_s|\bm{\theta}\bigr) = \bm{m}\bigl(\bm{\tilde{x}}_s|\bm{\theta}\bigr) =
+        \begin{bmatrix}
+          \beta_0 + \beta_1 x_{1,1} + \beta_2 x_{2,1} + ... \beta_K x_{K,1} + \ve_{1,s} \\
+          \beta_0 + \beta_1 x_{1,2} + \beta_2 x_{2,2} + ... \beta_K x_{K,2} + \ve_{2,s} \\
+          \vdots \\
+          \beta_0 + \beta_1 x_{1,N} + \beta_2 x_{2,N} + ... \beta_K x_{K,N} + \ve_{N,s}
+        \end{bmatrix} =
+        \begin{bmatrix}
+          \hat{y}_{1,s} \\ \hat{y}_{2,s} \\ \vdots \\ \hat{y}_{N,s}
+        \end{bmatrix} = \bm{\hat{y}}_s
+    \end{equation}
+    where $\ve_{i,s}$ is the $i$th observation error term in the $s$th simulation of the errors, and $\hat{y}_{i,s}$ is the $i$th observation predicted value of the dependent variable in the $s$th simulation of the errors.
+
+    The final model moment vector $\bm{\hat{m}}\bigl(\bm{\tilde{x}}|\bm{\theta}\bigr)$ to be used in SMM is an average across each of the moment vectors for each simulation $\bm{m}\bigl(\bm{\tilde{x}}_s|\bm{\theta}\bigr)$.
+    \begin{equation}\label{EqSMMmodmomgenlinreg2}
+      \bm{\hat{m}}\bigl(\bm{\tilde{x}}|\bm{\theta}\bigr) \equiv \frac{1}{S}\sum_{s=1}^S\bm{m}\bigl(\bm{\tilde{x}}_s|\bm{\theta}\bigr) = \frac{1}{S}\sum_{s=1}^S\bm{\hat{y}_s} = \bm{\hat{y}}
+    \end{equation}
+
+    Define the moment error function as the following.
+    \begin{equation}
+      \bm{e}\bigl(\bm{\tilde{x}},\bm{y},\bm{\theta}\bigr) = \bm{\hat{m}}\bigl(\bm{\tilde{x}}|\bm{\theta}\bigr) - \bm{m}\bigl(\bm{y}\bigr) = \bm{\hat{y}} - \bm{y}
+    \end{equation}
+    The SMM approach of estimating the parameter vector $\bm{\hat{\theta}}_{SMM}$ is to choose $\bm{\theta}$ to minimize some distance measure of the simulated model moments $\bm{\hat{m}}\bigl(\bm{\tilde{x}}|\bm{\theta}\bigr)$ from the data moments $\bm{m}\bigl(\bm{x}\bigr)$.
+    \begin{equation}\label{EqSMMdeflinreg2}
+      \bm{\hat{\theta}}_{SMM}:\quad \min_{\bm{\theta}}\:\bm{e}\bigl(\bm{\tilde{x}},\bm{y},\bm{\theta}\bigr)^T \: \bm{W} \: \bm{e}\bigl(\bm{\tilde{x}},\bm{y},\bm{\theta}\bigr)
+    \end{equation}
+
+    \begin{enumerate}
+      \item Draw $S$ samples of $N$ uniformly distributed random errors $u_{s,i}\sim U(0,1)$ such that the sample of errors for the $s$th simulation is $\bm{u}_s=(u_{s,1}, u_{s,2},...u_{s,i},...u_{s,N})$.
+      \item Guess values for the parameter vector to be estimated $\bm{\theta}_v = (\beta_{0,v},\beta_{1,v},...\beta_{K,v}, \sigma_v)$, where $v$ indexes the iteration of the guess.
+      \item Compute $S$ samples of $N$ normally distributed random shocks $\ve_{i,s}$ that correspond to the uniformly distributed random errors $u_{s,i}$ in step (1) and the current guess of the standard deviation $\sigma_v$ of the normally distributed errors.
+      \item Use the simulated values of $\ve_{i,s}$ and the guessed values of the coefficients $(\beta_{0,v},\beta_{1,v},...\beta_{K,v})$ to compute average predicted values $\bm{\hat{y}}$ using \eqref{EqSMMlinregsimmodmoms2} and \eqref{EqSMMmodmomgenlinreg2}.
+      \item Compute the value of the criterion function from \eqref{EqSMMdeflinreg2} given the guess for the parameter vector $\bm{\theta}_v$.
+      \item Update guess for parameter vector to $\bm{\theta}_{v+1}$ to minimize criterion function from \eqref{EqSMMdeflinreg2}. This should be done with a minimizer function.
+    \end{enumerate}
+
+
+\section{Linking SMM to Cross Validation in Machine Learning}
+
+
+\bibliography{GMM_SMM_notes.bib}
+
+
+\end{document}
